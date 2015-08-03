@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	connectQueue := terra.Start()
+	connectQueue := terra.Start(4)
 
 	players := [...]string{"Ivan","Drake","Sussana","NyanCat"}
 

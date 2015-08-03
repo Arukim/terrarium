@@ -9,23 +9,24 @@ type PlayerInfo struct{
 	Name string
 }
 
-func Start() chan PlayerInfo{
+func Start(players int) chan PlayerInfo{
 	connectQueue := make(chan PlayerInfo)
-	go start(connectQueue)
+	go start(players, connectQueue)
 	return connectQueue
 }
 
-func start(queueConnect chan PlayerInfo){
+func start(maxPlayers int, queueConnect chan PlayerInfo){
 	fmt.Printf("Waiting for players\n")
-	players := make([]PlayerInfo, 4, 4)
+	players := make([]PlayerInfo, maxPlayers, maxPlayers)
 	playersCount := 0
-	for(playersCount < 4){
+	for(playersCount < maxPlayers){
 		player := <- queueConnect
 		fmt.Printf("Player %s connected\n", player)
 		players[playersCount] = player
 		playersCount++
 	}
-	
+
+	fmt.Printf("Starting the game\n")
 	ticker := time.NewTicker(time.Millisecond * 500)
 	go func(){
 		for {
