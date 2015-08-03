@@ -5,8 +5,16 @@ import (
 	"time"
 )
 
+type TurnSummary struct {
+}
+
+type PlayerTurn struct {
+}
+
 type PlayerInfo struct{
 	Name string
+	TurnSummaryCh chan TurnSummary
+	PlayerTurnCh chan PlayerTurn	
 }
 
 func Start(players int) chan PlayerInfo{
@@ -21,7 +29,7 @@ func start(maxPlayers int, queueConnect chan PlayerInfo){
 	playersCount := 0
 	for(playersCount < maxPlayers){
 		player := <- queueConnect
-		fmt.Printf("Player %s connected\n", player)
+		fmt.Printf("Player %s connected\n", player.Name)
 		players[playersCount] = player
 		playersCount++
 	}
@@ -29,7 +37,7 @@ func start(maxPlayers int, queueConnect chan PlayerInfo){
 	fmt.Printf("Starting the game\n")
 	ticker := time.NewTicker(time.Millisecond * 500)
 	go func(){
-		for {
+		for {			
 			<- ticker.C
 			go tick()
 		}
