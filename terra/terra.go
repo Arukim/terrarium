@@ -18,6 +18,12 @@ type PlayerInfo struct{
 	PlayerTurnCh chan PlayerTurn	
 }
 
+type Game struct {
+	Players []PlayerInfo
+	PlayersCount int
+	MaxPlayers int
+}
+
 func Start(players int) chan PlayerInfo{
 	connectQueue := make(chan PlayerInfo)
 	go start(players, connectQueue)
@@ -26,13 +32,14 @@ func Start(players int) chan PlayerInfo{
 
 func start(maxPlayers int, queueConnect chan PlayerInfo){
 	fmt.Printf("Waiting for players\n")
-	players := make([]PlayerInfo, maxPlayers, maxPlayers)
-	playersCount := 0
-	for(playersCount < maxPlayers){
+	game := Game{MaxPlayers: maxPlayers}
+	game.Players = make([]PlayerInfo, game.MaxPlayers, game.MaxPlayers)
+	game.PlayersCount = 0
+	for(game.PlayersCount < game.MaxPlayers){
 		player := <- queueConnect
 		fmt.Printf("Player %s connected\n", player.Name)
-		players[playersCount] = player
-		playersCount++
+		game.Players[game.PlayersCount] = player
+		game.PlayersCount++
 	}
 
 	fmt.Printf("Starting the game\n")
@@ -40,17 +47,17 @@ func start(maxPlayers int, queueConnect chan PlayerInfo){
 	go func(){
 		for {			
 			<- ticker.C
-			tick(players)
+			game.Tick()
 		}
 	}()	
 }
 
-func tick(players []PlayerInfo){
+func (g Game) Tick(){
 	fmt.Printf("Tick\n")
 	// check eaten 
 	// spawn food
 	// send stats to players
-	for _, player := range players {
+	for _, player := range g.Players {
 		fmt.Printf("Sending turn info to %s\n", player.Name)
 		player.TurnSummaryCh <- TurnSummary { Round: 1}
 	}
