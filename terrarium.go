@@ -11,7 +11,15 @@ func main() {
 	players := [...]string{"Ivan","Drake","Sussana","NyanCat"}
 
 	for _, playerName := range players {
-		connectQueue <- terra.PlayerInfo{Name: playerName}
+		player := terra.PlayerInfo{Name: playerName}
+		player.TurnSummaryCh = make(chan terra.TurnSummary)
+		connectQueue <- player
+		go func(){
+			//player logic
+			for{
+				<- player.TurnSummaryCh
+			}
+		}()
 	}
 	
 	var input string
