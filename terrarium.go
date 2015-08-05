@@ -17,7 +17,8 @@ func main() {
 		go func(){
 			//player logic
 			for{
-				<- player.TurnSummaryCh
+				tInfo := <- player.TurnSummaryCh
+				fmt.Printf("%s: got %d turn info\n",player.Name, tInfo.Turn)
 			}
 		}()
 	}

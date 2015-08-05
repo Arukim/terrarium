@@ -6,7 +6,7 @@ import (
 )
 
 type TurnSummary struct {
-	Round int
+	Turn int
 }
 
 type PlayerTurn struct {
@@ -22,6 +22,7 @@ type Game struct {
 	Players []PlayerInfo
 	PlayersCount int
 	MaxPlayers int
+	Turn int
 }
 
 func Start(players int) chan PlayerInfo{
@@ -52,13 +53,15 @@ func start(maxPlayers int, queueConnect chan PlayerInfo){
 	}()	
 }
 
-func (g Game) Tick(){
-	fmt.Printf("Tick\n")
+func (g *Game) Tick(){
+	fmt.Printf("Turn %d\n", g.Turn)
 	// check eaten 
 	// spawn food
 	// send stats to players
 	for _, player := range g.Players {
-		fmt.Printf("Sending turn info to %s\n", player.Name)
-		player.TurnSummaryCh <- TurnSummary { Round: 1}
+		go func(player PlayerInfo, turn int){
+			player.TurnSummaryCh <- TurnSummary { Turn: turn}
+		}(player, g.Turn)
 	}
+	g.Turn++
 }
