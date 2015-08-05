@@ -6,7 +6,8 @@ import (
 )
 
 func main() {
-	connectQueue := terra.Start(4)
+	var game = terra.NewGame(4,25)
+	connectQueue := game.Start()
 
 	players := [...]string{"Ivan","Drake","Sussana","NyanCat"}
 
