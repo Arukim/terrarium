@@ -1,7 +1,8 @@
 package terra
 
 import (
-	"fmt"
+	"github.com/arukim/terrarium/helpers"
+	"log"
 	"time"
 )
 
@@ -12,66 +13,79 @@ type TurnSummary struct {
 type PlayerTurn struct {
 }
 
-type PlayerInfo struct{
-	Name string
+type PlayerInfo struct {
+	Name          string
 	TurnSummaryCh chan TurnSummary
-	PlayerTurnCh chan PlayerTurn	
+	PlayerTurnCh  chan PlayerTurn
 }
 
 type Game struct {
 	// settings
-	maxPlayers int
-	maxTurns int
+	maxPlayers  int
+	maxTurns    int
+	turnTimeout time.Duration
 	// current info
-	players []PlayerInfo
+	players      []PlayerInfo
 	playersCount int
-	turn int
+	turn         int
 }
 
-func NewGame(maxPlayers int, maxTurns int) *Game {
+func NewGame(maxPlayers int, maxTurns int, turnTimeout time.Duration) *Game {
 	g := new(Game)
 	g.maxPlayers = maxPlayers
 	g.maxTurns = maxTurns
+	g.turnTimeout = turnTimeout
 	return g
 }
 
-func (g *Game) Start() chan PlayerInfo{
+func (g *Game) Start() chan PlayerInfo {
 	connectQueue := make(chan PlayerInfo)
-	go func(){
-		fmt.Printf("Waiting for players\n")
+	go func() {
+		log.Printf("Waiting for players\n")
 		g.players = make([]PlayerInfo, g.maxPlayers, g.maxPlayers)
 		g.playersCount = 0
-		for(g.playersCount < g.maxPlayers){
-			player := <- connectQueue
-			fmt.Printf("Player %s connected\n", player.Name)
+		for g.playersCount < g.maxPlayers {
+			player := <-connectQueue
+			log.Printf("Player %s connected\n", player.Name)
 			g.players[g.playersCount] = player
 			g.playersCount++
 		}
-		
-		fmt.Printf("Starting the game\n")
-		ticker := time.NewTicker(time.Millisecond * 500)
-		go func(){
-			for g.turn < g.maxTurns {			
-				<- ticker.C
-				g.Tick()				
+
+		log.Printf("Starting the game\n")
+		go func() {
+			for g.turn < g.maxTurns {
+				g.Turn()
 			}
-			ticker.Stop()
-			fmt.Printf("Game has ended\n")
+			log.Printf("Game has ended\n")
 			// check for winner
-		}()	
+		}()
 	}()
 	return connectQueue
 }
 
-func (g *Game) Tick(){
-	fmt.Printf("Turn %d\n", g.turn)
-	// check eaten 
+func (g *Game) Turn() {
+	log.Printf("Turn %d\n", g.turn)
+	// check eaten
 	// spawn food
 	// send stats to players
 	for _, player := range g.players {
-		go func(player PlayerInfo, turn int){
-			player.TurnSummaryCh <- TurnSummary { Turn: turn}
-		}(player, g.turn)
+		// check for old turns
+		select {
+		case <-player.PlayerTurnCh:
+		default:
+		}
+
+		// start timeout, send turn summary
+		var timeout = helpers.NewTimeout(g.turnTimeout)
+		player.TurnSummaryCh <- TurnSummary{Turn: g.turn}
+
+		// wait for player answer
+		select {
+		case <-player.PlayerTurnCh:
+			log.Printf("turn was made")
+		case <-timeout.Alarm:
+			log.Printf("turn timeout")
+		}
 	}
 	g.turn++
 }
