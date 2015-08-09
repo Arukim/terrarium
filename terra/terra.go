@@ -17,6 +17,7 @@ type PlayerInfo struct {
 	Name          string
 	TurnSummaryCh chan TurnSummary
 	PlayerTurnCh  chan PlayerTurn
+	Score         int
 }
 
 type Game struct {
@@ -56,19 +57,32 @@ func (g *Game) Start() chan PlayerInfo {
 			for g.turn < g.maxTurns {
 				g.Turn()
 			}
-			log.Printf("Game has ended\n")
-			// check for winner
+			g.FindWinner()
 		}()
 	}()
 	return connectQueue
 }
 
+func (g *Game) FindWinner() {
+	maxScore := 0
+	for _, player := range g.players {
+		if player.Score > maxScore {
+			maxScore = player.Score
+		}
+	}
+
+	for _, player := range g.players {
+		if player.Score == maxScore {
+			log.Printf("%s is winner with %v score", player.Name, player.Score)
+		}
+	}
+}
+
 func (g *Game) Turn() {
 	log.Printf("Turn %d\n", g.turn)
-	// check eaten
-	// spawn food
-	// send stats to players
-	for _, player := range g.players {
+	for i, _ := range g.players {
+		player := &g.players[i]
+
 		// check for old turns
 		select {
 		case <-player.PlayerTurnCh:
@@ -83,6 +97,7 @@ func (g *Game) Turn() {
 		select {
 		case <-player.PlayerTurnCh:
 			log.Printf("turn was made")
+			player.Score++
 		case <-timeout.Alarm:
 			log.Printf("turn timeout")
 		}
