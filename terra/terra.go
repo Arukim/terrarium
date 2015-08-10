@@ -3,6 +3,7 @@ package terra
 import (
 	"github.com/arukim/terrarium/helpers"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -20,15 +21,24 @@ type PlayerInfo struct {
 	Score         int
 }
 
+type Point struct {
+	X int
+	Y int
+}
+
 type Game struct {
 	// settings
-	maxPlayers  int
-	maxTurns    int
-	turnTimeout time.Duration
+	maxPlayers    int
+	maxTurns      int
+	mapWidth      int
+	mapHeight     int
+	foodSpawnRate int
+	turnTimeout   time.Duration
 	// current info
 	players      []PlayerInfo
 	playersCount int
 	turn         int
+	food         map[Point]int
 }
 
 func NewGame(maxPlayers int, maxTurns int, turnTimeout time.Duration) *Game {
@@ -36,6 +46,11 @@ func NewGame(maxPlayers int, maxTurns int, turnTimeout time.Duration) *Game {
 	g.maxPlayers = maxPlayers
 	g.maxTurns = maxTurns
 	g.turnTimeout = turnTimeout
+	g.mapWidth = 100
+	g.mapHeight = 100
+	g.foodSpawnRate = 20
+
+	g.food = make(map[Point]int)
 	return g
 }
 
@@ -57,6 +72,7 @@ func (g *Game) Start() chan PlayerInfo {
 			for g.turn < g.maxTurns {
 				g.Turn()
 			}
+			g.PrintFoodMap()
 			g.FindWinner()
 		}()
 	}()
@@ -78,9 +94,27 @@ func (g *Game) FindWinner() {
 	}
 }
 
+func (g *Game) SpawnFood() {
+	for i := 0; i < g.foodSpawnRate; i++ {
+		var point = Point{X: rand.Intn(g.mapWidth),
+			Y: rand.Intn(g.mapHeight)}
+		var currValue = g.food[point]
+		currValue++
+		g.food[point] = currValue
+	}
+}
+
+func (g *Game) PrintFoodMap() {
+	for key, value := range g.food {
+		log.Printf("%v - %v", value, key)
+	}
+}
+
 func (g *Game) Turn() {
 	log.Printf("Turn %d\n", g.turn)
 	for i, _ := range g.players {
+		g.SpawnFood()
+
 		player := &g.players[i]
 
 		// check for old turns
