@@ -4,7 +4,10 @@ import (
 	"github.com/arukim/terrarium/helpers"
 	"log"
 	"math/rand"
+	"encoding/json"
 	"time"
+	"fmt"
+	"os"
 )
 
 type TurnSummary struct {
@@ -39,6 +42,8 @@ type Game struct {
 	playersCount int
 	turn         int
 	food         map[Point]int
+	// log file
+	logFile      * os.File	
 }
 
 func NewGame(maxPlayers int, maxTurns int, turnTimeout time.Duration) *Game {
@@ -51,6 +56,13 @@ func NewGame(maxPlayers int, maxTurns int, turnTimeout time.Duration) *Game {
 	g.foodSpawnRate = 20
 
 	g.food = make(map[Point]int)
+	
+	logFile, err := os.OpenFile("turns.json", os.O_CREATE | os.O_WRONLY,0660)
+	if err != nil {
+		log.Fatal(err)
+	}	
+
+	g.logFile = logFile
 	return g
 }
 
@@ -74,6 +86,8 @@ func (g *Game) Start() chan PlayerInfo {
 			}
 			g.PrintFoodMap()
 			g.FindWinner()
+			
+			g.logFile.Close()
 		}()
 	}()
 	return connectQueue
@@ -95,12 +109,31 @@ func (g *Game) FindWinner() {
 }
 
 func (g *Game) SpawnFood() {
+	var foodDiff = make(map[Point]int)
 	for i := 0; i < g.foodSpawnRate; i++ {
 		var point = Point{X: rand.Intn(g.mapWidth),
 			Y: rand.Intn(g.mapHeight)}
+		foodDiff[point] = 1
+	}
+	LogFoodDiff(foodDiff, g.logFile)
+
+	for point, value := range foodDiff{
 		var currValue = g.food[point]
-		currValue++
+		currValue+= value
 		g.food[point] = currValue
+	}
+}
+
+func LogFoodDiff(diff map[Point]int, logFile * os.File){
+	tmpDiff := make(map[string]int)
+	for point, value := range diff {
+		var arg = fmt.Sprintf("%v,%v",point.X, point.Y)
+		tmpDiff[arg] = value
+	}
+	json,_ := json.Marshal(tmpDiff)
+	_, err := logFile.Write(json)
+	if err != nil {
+		log.Fatal("Can't write to file")
 	}
 }
 

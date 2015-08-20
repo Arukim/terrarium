@@ -17,7 +17,7 @@ func InitLog() {
 func main() {
 	InitLog()
 
-	var game = terra.NewGame(4, 25, 250*time.Millisecond)
+	var game = terra.NewGame(4, 25, 25*time.Millisecond)
 	connectQueue := game.Start()
 
 	players := [...]string{"Ivan", "Drake", "Sussana", "NyanCat"}
@@ -32,7 +32,7 @@ func main() {
 			for {
 				tInfo := <-player.TurnSummaryCh
 				log.Printf("%s: got %d turn info\n", player.Name, tInfo.Turn)
-				time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
+				time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
 				player.PlayerTurnCh <- terra.PlayerTurn{}
 			}
 		}()
