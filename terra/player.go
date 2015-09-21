@@ -1,11 +1,5 @@
 package terra
 
-import (
-	"math/rand"
-)
-
-var _possibleNames = [...]string{"Ivan", "Drake", "Sussana", "NyanCat", "David Blain", "Sub-Zero", "Yakobovich"}
-
 type PlayerTurn struct {
 }
 
@@ -16,9 +10,9 @@ type Player struct {
 }
 
 //player constructor
-func NewPlayer() *Player {
+func NewPlayer(name string) *Player {
 	p := new(Player)
-	p.Name = _possibleNames[rand.Intn(len(_possibleNames))]
+	p.Name = name
 	p.TurnSummaryCh = make(chan TurnSummary)
 	p.PlayerTurnCh = make(chan PlayerTurn)
 	return p

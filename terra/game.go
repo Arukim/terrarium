@@ -11,12 +11,18 @@ import (
 )
 
 type TurnSummary struct {
-	Turn int
+	Turn  int
+	Cells []CellInfo
 }
 
 type Point struct {
 	X int
 	Y int
+}
+
+type CellInfo struct {
+	Pos  Point
+	Size int
 }
 
 type PlayerInfo struct {
@@ -62,6 +68,15 @@ func NewGame(maxPlayers int, maxTurns int, turnTimeout time.Duration) *Game {
 	return g
 }
 
+func (g *Game) SeedPlayers() {
+	for _, playerInfo := range g.playersInfo {
+		x := rand.Intn(g.mapWidth)
+		y := rand.Intn(g.mapHeight)
+
+		playerInfo.Cells[Point{X: x, Y: y}] = 1
+	}
+}
+
 func (g *Game) Start() chan *Player {
 	connectQueue := make(chan *Player)
 	go func() {
@@ -77,6 +92,7 @@ func (g *Game) Start() chan *Player {
 		}
 
 		// start positions
+		g.SeedPlayers()
 
 		log.Printf("Starting the game\n")
 		go func() {
@@ -158,7 +174,13 @@ func (g *Game) Turn() {
 
 		// start timeout, send turn summary
 		var timeout = helpers.NewTimeout(g.turnTimeout)
-		pInfo.Player.TurnSummaryCh <- TurnSummary{Turn: g.turn}
+
+		cells := make([]CellInfo, 0, len(pInfo.Cells))
+		for key, value := range pInfo.Cells {
+			cells = append(cells, CellInfo{Pos: key, Size: value})
+		}
+
+		pInfo.Player.TurnSummaryCh <- TurnSummary{Turn: g.turn, Cells: cells}
 
 		// wait for player answer
 		select {

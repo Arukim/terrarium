@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var _possibleNames = [...]string{"Ivan", "Drake", "Sussana", "NyanCat", "David Blain", "Sub-Zero", "Yakobovich"}
+
 type TerraBot interface {
 	Init(connectQueue chan *Player)
 }
@@ -17,7 +19,7 @@ type Forwarder struct {
 
 func (f Forwarder) Init(connectQueue chan *Player) {
 	f.ConnectQueue = connectQueue
-	player := NewPlayer()
+	player := NewPlayer(_possibleNames[rand.Intn(len(_possibleNames))])
 
 	connectQueue <- player
 	go func() {
