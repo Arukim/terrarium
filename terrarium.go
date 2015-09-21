@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/arukim/terrarium/bots"
 	"github.com/arukim/terrarium/terra"
 	"log"
-	"math/rand"
 	"os"
 	"time"
 )
@@ -21,17 +21,8 @@ func main() {
 	connectQueue := game.Start()
 
 	for i := 0; i < 4; i++ {
-		player := terra.NewPlayer()
-		connectQueue <- player
-		go func() {
-			//player logic
-			for {
-				tInfo := <-player.TurnSummaryCh
-				log.Printf("%s: got %d turn info\n", player.Name, tInfo.Turn)
-				time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
-				player.PlayerTurnCh <- terra.PlayerTurn{}
-			}
-		}()
+		bot := bots.Forwarder{}
+		bot.Init(connectQueue)
 	}
 
 	var input string
