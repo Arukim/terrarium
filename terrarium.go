@@ -20,12 +20,8 @@ func main() {
 	var game = terra.NewGame(4, 25, 25*time.Millisecond)
 	connectQueue := game.Start()
 
-	players := [...]string{"Ivan", "Drake", "Sussana", "NyanCat"}
-
-	for _, playerName := range players {
-		player := terra.PlayerInfo{Name: playerName}
-		player.TurnSummaryCh = make(chan terra.TurnSummary)
-		player.PlayerTurnCh = make(chan terra.PlayerTurn)
+	for i := 0; i < 4; i++ {
+		player := terra.NewPlayer()
 		connectQueue <- player
 		go func() {
 			//player logic

@@ -14,19 +14,15 @@ type TurnSummary struct {
 	Turn int
 }
 
-type PlayerTurn struct {
-}
-
-type PlayerInfo struct {
-	Name          string
-	TurnSummaryCh chan TurnSummary
-	PlayerTurnCh  chan PlayerTurn
-	Score         int
-}
-
 type Point struct {
 	X int
 	Y int
+}
+
+type PlayerInfo struct {
+	Player *Player
+	Score  int
+	Cells  map[Point]int
 }
 
 type Game struct {
@@ -38,7 +34,7 @@ type Game struct {
 	foodSpawnRate int
 	turnTimeout   time.Duration
 	// current info
-	players      []PlayerInfo
+	playersInfo  []PlayerInfo
 	playersCount int
 	turn         int
 	food         map[Point]int
@@ -66,18 +62,21 @@ func NewGame(maxPlayers int, maxTurns int, turnTimeout time.Duration) *Game {
 	return g
 }
 
-func (g *Game) Start() chan PlayerInfo {
-	connectQueue := make(chan PlayerInfo)
+func (g *Game) Start() chan *Player {
+	connectQueue := make(chan *Player)
 	go func() {
 		log.Printf("Waiting for players\n")
-		g.players = make([]PlayerInfo, g.maxPlayers, g.maxPlayers)
+		g.playersInfo = make([]PlayerInfo, g.maxPlayers, g.maxPlayers)
 		g.playersCount = 0
 		for g.playersCount < g.maxPlayers {
 			player := <-connectQueue
 			log.Printf("Player %s connected\n", player.Name)
-			g.players[g.playersCount] = player
+			g.playersInfo[g.playersCount].Player = player
+			g.playersInfo[g.playersCount].Cells = make(map[Point]int)
 			g.playersCount++
 		}
+
+		// start positions
 
 		log.Printf("Starting the game\n")
 		go func() {
@@ -95,15 +94,16 @@ func (g *Game) Start() chan PlayerInfo {
 
 func (g *Game) FindWinner() {
 	maxScore := 0
-	for _, player := range g.players {
-		if player.Score > maxScore {
-			maxScore = player.Score
+	for _, playerInfo := range g.playersInfo {
+		if playerInfo.Score > maxScore {
+			maxScore = playerInfo.Score
 		}
 	}
 
-	for _, player := range g.players {
-		if player.Score == maxScore {
-			log.Printf("%s is winner with %v score", player.Name, player.Score)
+	for _, playerInfo := range g.playersInfo {
+		if playerInfo.Score == maxScore {
+			log.Printf("%s is winner with %v score",
+				playerInfo.Player.Name, playerInfo.Score)
 		}
 	}
 }
@@ -145,26 +145,26 @@ func (g *Game) PrintFoodMap() {
 
 func (g *Game) Turn() {
 	log.Printf("Turn %d\n", g.turn)
-	for i, _ := range g.players {
+	for i, _ := range g.playersInfo {
 		g.SpawnFood()
 
-		player := &g.players[i]
+		pInfo := &g.playersInfo[i]
 
 		// check for old turns
 		select {
-		case <-player.PlayerTurnCh:
+		case <-pInfo.Player.PlayerTurnCh:
 		default:
 		}
 
 		// start timeout, send turn summary
 		var timeout = helpers.NewTimeout(g.turnTimeout)
-		player.TurnSummaryCh <- TurnSummary{Turn: g.turn}
+		pInfo.Player.TurnSummaryCh <- TurnSummary{Turn: g.turn}
 
 		// wait for player answer
 		select {
-		case <-player.PlayerTurnCh:
+		case <-pInfo.Player.PlayerTurnCh:
 			log.Printf("turn was made")
-			player.Score++
+			pInfo.Score++
 		case <-timeout.Alarm:
 			log.Printf("turn timeout")
 		}
