@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/arukim/terrarium/bots"
-	"github.com/arukim/terrarium/terra"
+	//	"github.com/arukim/terrarium/bots"
+	"github.com/arukim/terrarium/network"
+	//	"github.com/arukim/terrarium/terra"
 	"log"
 	"os"
-	"time"
+	//	"time"
 )
 
 func InitLog() {
@@ -17,13 +18,16 @@ func InitLog() {
 func main() {
 	InitLog()
 
-	var game = terra.NewGame(4, 25, 25*time.Millisecond)
-	connectQueue := game.Start()
+	discovery := network.DiscoveryService{TimeoutSec: 5}
+	discovery.Start()
+
+	//	var game = terra.NewGame(4, 25, 25*time.Millisecond)
+	/*connectQueue := game.Start()
 
 	for i := 0; i < 4; i++ {
 		bot := bots.Forwarder{}
 		bot.Init(connectQueue)
-	}
+	}*/
 
 	var input string
 	fmt.Scanln(&input)
