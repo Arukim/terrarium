@@ -29,9 +29,17 @@ func (d *DiscoveryService) discover() {
 	select {
 	case <-serverFound:
 		log.Print("[discovery] server found")
+		time.Sleep(10 * time.Second)
 	case <-timeout.Alarm:
 		log.Print("[discovery] timeout")
 	}
+}
+
+type discoverRequest struct {
+	Uri         string
+	Type        string
+	Description string
+	Title       string
 }
 
 type discoverRespose struct {
@@ -40,9 +48,16 @@ type discoverRespose struct {
 
 func discoverServer(serverFound chan bool) {
 	api := gopencils.Api("http://localhost:5000/api")
-	node := "me"
+
+	req := &discoverRequest{
+		Uri:         "http://localhost:3000",
+		Type:        "Terrarium.Go",
+		Title:       "Terrarium Game",
+		Description: "MMO for bots",
+	}
+
 	resp := &discoverRespose{}
-	var res, err = api.Res("games", resp).Put(node)
+	var res, err = api.Res("gameservers", resp).Put(req)
 	if err == nil {
 		log.Print(res.Response)
 		serverFound <- true
